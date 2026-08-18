@@ -739,6 +739,20 @@
   font-family: @system;
 }
 
+// Empty LaTeX groups are represented by their existing `first` atom. This is
+// intentionally a rendering affordance, not a serialized placeholder atom.
+.ML__empty-slot {
+  box-sizing: border-box;
+  min-width: 0.9em;
+  border: 1px solid var(--_placeholder-color, #5ea6fd);
+  border-radius: 0.16em;
+  background: color-mix(
+    in srgb,
+    var(--_placeholder-color, #5ea6fd) 12%,
+    transparent
+  );
+}
+
 .ML__notation {
   position: absolute;
   box-sizing: border-box;

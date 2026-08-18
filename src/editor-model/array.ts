@@ -6,7 +6,6 @@ import type { _Model } from './model-private';
 import { ArrayAtom } from '../atoms/array';
 import { Environment, TabularEnvironment } from '../public/core-types';
 import { makeEnvironment } from '../latex-commands/environments';
-import { PlaceholderAtom } from '../atoms/placeholder';
 import { LeftRightAtom } from '../atoms/leftright';
 import { range } from './selection-utils';
 export * from './array-utils';
@@ -76,20 +75,20 @@ function parentArray(
 
       let array: ArrayAtom;
       if (where.endsWith('column')) {
-        if (firstCell.length === 0) firstCell = placeholderCell();
-        if (secondCell.length === 0) secondCell = placeholderCell();
+        if (firstCell.length === 0) firstCell = emptyCell();
+        if (secondCell.length === 0) secondCell = emptyCell();
         array = makeEnvironment('split', [[firstCell, secondCell]]);
         model.root = array;
-        if (isPlaceholderCell(array, 0, 0)) selectCell(model, array, 0, 0);
-        else if (isPlaceholderCell(array, 0, 1)) selectCell(model, array, 0, 1);
+        if (isEmptyCell(array, 0, 0)) selectCell(model, array, 0, 0);
+        else if (isEmptyCell(array, 0, 1)) selectCell(model, array, 0, 1);
         else model.position = model.offsetOf(cursor);
       } else {
         // if (firstCell.length === 0) firstCell = emptyCell();
         // if (secondCell.length === 0) secondCell = emptyCell();
         array = makeEnvironment('lines', [[firstCell], [secondCell]]);
         model.root = array;
-        // if (isPlaceholderCell(array, 0, 0)) selectCell(model, array, 0, 0);
-        // else if (isPlaceholderCell(array, 1, 0)) selectCell(model, array, 1, 0);
+        // if (isEmptyCell(array, 0, 0)) selectCell(model, array, 0, 0);
+        // else if (isEmptyCell(array, 1, 0)) selectCell(model, array, 1, 0);
         // else
         // Select the second line
         selectCell(model, array, 1, 0);
@@ -112,8 +111,8 @@ function parentArray(
         model.offsetOf(parent.firstChild),
         model.position,
       ]);
-      if (firstCell.length === 0) firstCell = placeholderCell();
-      if (secondCell.length === 0) secondCell = placeholderCell();
+      if (firstCell.length === 0) firstCell = emptyCell();
+      if (secondCell.length === 0) secondCell = emptyCell();
 
       let envName: Environment = 'pmatrix';
       const lDelim = parent.leftDelim;
@@ -142,12 +141,12 @@ function parentArray(
 
       parent.parent!.addChildBefore(array, parent);
       parent.parent!.removeChild(parent);
-      if (isPlaceholderCell(array, 0, 0)) selectCell(model, array, 0, 0);
+      if (isEmptyCell(array, 0, 0)) selectCell(model, array, 0, 0);
       else if (where.endsWith('column')) {
-        if (isPlaceholderCell(array, 0, 1)) selectCell(model, array, 0, 1);
+        if (isEmptyCell(array, 0, 1)) selectCell(model, array, 0, 1);
         else model.position = model.offsetOf(atom);
       } else {
-        if (isPlaceholderCell(array, 1, 0)) selectCell(model, array, 1, 0);
+        if (isEmptyCell(array, 1, 0)) selectCell(model, array, 1, 0);
         else model.position = model.offsetOf(atom);
       }
 
@@ -160,7 +159,7 @@ function parentArray(
     : [undefined, [0, 0]];
 }
 
-function isPlaceholderCell(
+function isEmptyCell(
   array: ArrayAtom,
   row: number,
   column: number
@@ -168,8 +167,7 @@ function isPlaceholderCell(
   // const pos = model.offsetOf(array.getCell(row, column)![1]);
   // return pos >= 0 && model.at(pos).type === 'placeholder';
   const cell = array.getCell(row, column);
-  if (cell?.length !== 2) return false;
-  return cell[1].type === 'placeholder';
+  return cell?.length === 1 && cell[0].type === 'first';
 }
 
 function cellRange(
@@ -457,10 +455,6 @@ registerCommand(
     changeSelection: true,
   }
 );
-
-function placeholderCell() {
-  return [new PlaceholderAtom()];
-}
 
 function emptyCell() {
   return [new Atom({ type: 'first', mode: 'math' })];

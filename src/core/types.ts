@@ -189,6 +189,7 @@ export interface ContextInterface {
   readonly minFontScale: number;
   readonly maxMatrixCols: number;
   readonly placeholderSymbol: string;
+  readonly preserveEmptySlots: boolean;
   readonly colorMap: (name: string) => string | undefined;
   readonly backgroundColorMap: (name: string) => string | undefined;
   getMacro(token: string): MacroDefinition | null;

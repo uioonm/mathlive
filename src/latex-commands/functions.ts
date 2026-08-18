@@ -7,7 +7,6 @@ import { GenfracAtom, GenfracOptions } from '../atoms/genfrac';
 import { MiddleDelimAtom } from '../atoms/delim';
 
 import { argAtoms, defineFunction } from './definitions-utils';
-import { PlaceholderAtom } from '../atoms/placeholder';
 import { serializeLatexValue } from '../core/registers-utils';
 import type { LatexValue } from '../public/core-types';
 import { Context } from '../core/context';
@@ -191,8 +190,8 @@ defineFunction(
       }
 
       return new GenfracAtom(
-        !args[0] ? [new PlaceholderAtom()] : argAtoms(args[0]),
-        !args[1] ? [new PlaceholderAtom()] : argAtoms(args[1]),
+        argAtoms(args[0]),
+        argAtoms(args[1]),
         genfracOptions
       );
     },
@@ -223,8 +222,8 @@ defineFunction(['cfrac'], '[:string]{:expression}{:expression}', {
     if (args[0] === 'l') genfracOptions.align = 'left';
 
     return new GenfracAtom(
-      !args[1] ? [new PlaceholderAtom()] : argAtoms(args[1]),
-      !args[2] ? [new PlaceholderAtom()] : argAtoms(args[2]),
+      argAtoms(args[1]),
+      argAtoms(args[2]),
       genfracOptions
     );
   },

@@ -372,6 +372,7 @@ export const DEFAULT_KEYBINDINGS: Keybinding[] = [
   // },
 
   { key: 'alt+[Tab]', ifMode: 'math', command: 'addColumnAfter' },
+  { key: 'shift+[Enter]', ifMode: 'math', command: 'addColumnAfter' },
   { key: 'shift+alt+[Tab]', ifMode: 'math', command: 'addColumnBefore' },
   { key: 'alt+[Enter]', ifMode: 'math', command: 'addRowAfter' },
   { key: 'shift+alt+[Enter]', ifMode: 'math', command: 'addRowBefore' },

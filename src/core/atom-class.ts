@@ -189,6 +189,17 @@ export class Atom<T extends (Argument | null)[] = (Argument | null)[]> {
     options?: { type?: BoxType; classes?: string }
   ): Box | null {
     if (!atoms) return null;
+
+    // An empty branch still has its sentinel `first` atom. Render that atom as
+    // an interactive slot instead of mutating the model with a placeholder.
+    if (
+      context.preserveEmptySlots &&
+      atoms.length === 1 &&
+      atoms[0].type === 'first' &&
+      atoms[0].parent?.type !== 'root'
+    )
+      return makeEmptySlotBox(context, atoms[0], options?.type);
+
     const runs = getStyleRuns(atoms);
 
     const boxes: Box[] = [];
@@ -1127,6 +1138,33 @@ export class Atom<T extends (Argument | null)[] = (Argument | null)[]> {
     }
     return '';
   }
+}
+
+function makeEmptySlotBox(
+  context: Context,
+  atom: Atom,
+  type: BoxType | undefined
+): Box {
+  const slot = new Box(null, {
+    type: type ?? 'ord',
+    classes: 'ML__empty-slot',
+  });
+  slot.width = 0.9;
+  slot.height = 0.72;
+  slot.depth = 0.22;
+  slot.setStyle('display', 'inline-block');
+  slot.setStyle('width', '0.9em');
+  slot.setStyle('height', '0.94em');
+  slot.setStyle('vertical-align', '-0.22em');
+
+  // A regular Box appends its caret after its content. Keep this zero-width
+  // caret before the visible slot so an empty group behaves like a text field.
+  const result = new Box([new Box(null, { caret: atom.caret }), slot], {
+    type: type ?? 'ord',
+    isSelected: atom.isSelected,
+  });
+  atom.bind(context, result);
+  return result;
 }
 
 function getStyleRuns(atoms: readonly Atom[]): (readonly Atom[])[] {

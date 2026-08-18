@@ -186,6 +186,7 @@ export function getDefault(): Required<_MathfieldOptions> {
 
     mathModeSpace: '',
     placeholderSymbol: '▢',
+    preserveEmptySlots: false,
     contentPlaceholder: '',
     popoverPolicy: 'auto',
     environmentPopoverPolicy: 'off',

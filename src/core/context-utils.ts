@@ -15,6 +15,7 @@ export function getDefaultContext(): ContextInterface {
     smartFence: false,
     renderPlaceholder: undefined,
     placeholderSymbol: '▢',
+    preserveEmptySlots: false,
     letterShapeStyle: l10n.locale.startsWith('fr') ? 'french' : 'tex',
     minFontScale: 0,
     maxMatrixCols: 10,

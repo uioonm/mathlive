@@ -14,7 +14,6 @@ import { joinLatex } from '../core/tokenizer';
 import { AXIS_HEIGHT, BASELINE_SKIP } from '../core/font-metrics';
 import { convertDimensionToEm } from '../core/registers-utils';
 
-import { PlaceholderAtom } from './placeholder';
 import { isMatrixEnvironment } from '../latex-commands/environment-types';
 import type { AtomJson, Branch, ToLatexOptions } from 'core/types';
 
@@ -148,16 +147,8 @@ function normalizeCells(
   const result: (readonly Atom[])[][] = [];
   for (const row of rows) {
     if (row.length !== colCount) {
-      for (let i = row.length; i < colCount; i++) {
-        if (atom.isMultiline)
-          row.push([new Atom({ type: 'first', mode: atom.mode })]);
-        else {
-          row.push([
-            new Atom({ type: 'first', mode: atom.mode }),
-            new PlaceholderAtom(),
-          ]);
-        }
-      }
+      for (let i = row.length; i < colCount; i++)
+        row.push([new Atom({ type: 'first', mode: atom.mode })]);
     }
     result.push(row);
   }
@@ -486,7 +477,10 @@ export class ArrayAtom extends Atom {
       const outrow: ArrayRow = { cells: [], height: 0, depth: 0, pos: 0 };
       for (const element of inrow) {
         const elt =
-          this.isMultiline && element && isEmptyMultilineCell(element)
+          this.isMultiline &&
+          !cellContext.preserveEmptySlots &&
+          element &&
+          isEmptyMultilineCell(element)
             ? makeEmptyLineAnchor(element, cellContext, {
                 height: arstrutHeight / cellContext.scalingFactor,
                 depth: arstrutDepth / cellContext.scalingFactor,
@@ -796,9 +790,7 @@ export class ArrayAtom extends Atom {
     this._rows.splice(
       row,
       0,
-      Array.from({ length: this.colCount }, () =>
-        makeEmptyCell(this, !this.isMultiline)
-      )
+      Array.from({ length: this.colCount }, () => makeEmptyCell(this))
     );
     adjustBranches(this);
     this.isDirty = true;
@@ -810,9 +802,7 @@ export class ArrayAtom extends Atom {
     this._rows.splice(
       row + 1,
       0,
-      Array.from({ length: this.colCount }, () =>
-        makeEmptyCell(this, !this.isMultiline)
-      )
+      Array.from({ length: this.colCount }, () => makeEmptyCell(this))
     );
 
     adjustBranches(this);
@@ -896,19 +886,10 @@ export class ArrayAtom extends Atom {
 /**
  * Create an empty cell
  */
-function makeEmptyCell(
-  parent: ArrayAtom,
-  withPlaceholder = false
-): readonly Atom[] {
+function makeEmptyCell(parent: ArrayAtom): readonly Atom[] {
   const first = new Atom({ type: 'first', mode: parent.mode });
   first.parent = parent;
-  const result = [first];
-  if (withPlaceholder) {
-    const placeholder = new PlaceholderAtom();
-    placeholder.parent = parent;
-    result.push(placeholder);
-  }
-  return result;
+  return [first];
 }
 
 function adjustBranches(array: ArrayAtom): void {

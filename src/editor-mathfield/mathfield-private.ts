@@ -2051,6 +2051,7 @@ If you are using Vue, this may be because you are using the runtime-only build o
       minFontScale: this.minFontScale,
       maxMatrixCols: this.maxMatrixCols,
       placeholderSymbol: this.options.placeholderSymbol ?? '▢',
+      preserveEmptySlots: this.options.preserveEmptySlots,
       colorMap: (name) => this.colorMap(name),
       backgroundColorMap: (name) => this.backgroundColorMap(name),
       getMacro: (token) =>

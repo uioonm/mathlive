@@ -293,6 +293,7 @@ const DEPRECATED_OPTIONS = {
   enablePopover: 'mf.popoverPolicy = ...',
   mathModeSpace: 'mf.mathModeSpace = ...',
   placeholderSymbol: 'mf.placeholderSymbol = ...',
+  preserveEmptySlots: 'on/off',
   readOnly: 'mf.readOnly = ...',
   removeExtraneousParentheses: 'mf.removeExtraneousParentheses = ...',
   scriptDepth: 'mf.scriptDepth = ...',
@@ -2619,6 +2620,17 @@ mf.macros = {
   }
   set placeholderSymbol(value: string) {
     this._setOptions({ placeholderSymbol: value });
+  }
+
+  /**
+   * When enabled, keep empty structural slots visible while editing.
+   */
+  get preserveEmptySlots(): boolean {
+    return this._getOption('preserveEmptySlots');
+  }
+
+  set preserveEmptySlots(value: boolean) {
+    this._setOptions({ preserveEmptySlots: value });
   }
 
   /**

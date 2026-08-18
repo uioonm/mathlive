@@ -302,6 +302,17 @@ export type EditingOptions = {
 
   placeholderSymbol: string;
 
+  /**
+   * Keep editable structural slots (for example fraction branches, scripts
+   * and matrix cells) visible after their last atom is deleted.
+   *
+   * The slot is represented by an internal placeholder and is omitted by the
+   * `latex-without-placeholders` export format.
+   *
+   * **Default**: `false`
+   */
+  preserveEmptySlots: boolean;
+
   contentPlaceholder: string;
 
   popoverPolicy: 'auto' | 'off';

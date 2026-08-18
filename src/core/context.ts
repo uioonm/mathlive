@@ -90,6 +90,7 @@ export class Context implements ContextInterface {
   readonly mathstyle: Mathstyle;
 
   readonly placeholderSymbol: string;
+  readonly preserveEmptySlots: boolean;
   readonly colorMap: (name: string) => string | undefined;
   readonly backgroundColorMap: (name: string) => string | undefined;
   readonly getMacro: (token: string) => MacroDefinition | null;
@@ -193,6 +194,7 @@ export class Context implements ContextInterface {
 
     this.smartFence = template.smartFence;
     this.placeholderSymbol = template.placeholderSymbol;
+    this.preserveEmptySlots = template.preserveEmptySlots;
     this.colorMap = template.colorMap ?? ((x) => x);
     this.backgroundColorMap = template.backgroundColorMap ?? ((x) => x);
 
