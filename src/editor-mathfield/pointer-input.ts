@@ -550,6 +550,17 @@ export function offsetFromPoint(
     }
   }
 
+  // A virtual empty body has only one editable position. Do not split its
+  // hitbox into positions before and after the owning atom.
+  if (
+    mathfield.options.preserveEmptySlots &&
+    atom.type !== 'root' &&
+    atom.hasEmptyBranch('body') &&
+    atom.firstChild
+  ) {
+    return mathfield.model.offsetOf(atom.firstChild);
+  }
+
   let result = mathfield.model.offsetOf(atom);
 
   if (result < 0) return -1;

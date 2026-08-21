@@ -196,7 +196,11 @@ export class Atom<T extends (Argument | null)[] = (Argument | null)[]> {
       context.preserveEmptySlots &&
       atoms.length === 1 &&
       atoms[0].type === 'first' &&
-      atoms[0].parent?.type !== 'root'
+      atoms[0].parent?.type !== 'root' &&
+      (atoms[0].parent?.type !== 'group' ||
+        atoms[0].parent.branches.some((branch) => branch !== 'body') ||
+        atoms[0].parent.rightSibling?.type === 'subsup' ||
+        atoms[0].parent.leftSibling?.isFunction)
     )
       return makeEmptySlotBox(context, atoms[0], options?.type);
 

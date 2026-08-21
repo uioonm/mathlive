@@ -1508,6 +1508,20 @@ export class Parser {
     argType = argType === 'auto' ? this.parseMode : argType;
     this.skipFiller();
     if (!this.match('[')) return null;
+
+    // Parse math arguments as a context even when `[]` is empty. The context
+    // contributes its sentinel atom, preserving an explicitly present empty
+    // argument such as the root index in `\\sqrt[]{}`.
+    if (argType === 'math') {
+      this.beginContext({ mode: 'math' });
+      const result = this.mathlist.concat(
+        this.scan((token) => token === ']')
+      );
+      this.endContext();
+      this.match(']');
+      return result;
+    }
+
     let result: Argument | null = null;
     while (!this.end() && !this.match(']')) {
       if (argType === 'string') result = this.scanString();
@@ -1540,10 +1554,6 @@ export class Parser {
         }
 
         result = bboxParameter;
-      } else if (argType === 'math') {
-        this.beginContext({ mode: 'math' });
-        result = this.mathlist.concat(this.scan((token) => token === ']'));
-        this.endContext();
       }
     }
 
