@@ -3,14 +3,34 @@ import type { ParseMode } from '../public/core-types';
 import { Atom } from '../core/atom-class';
 import type { Context } from '../core/context';
 import type { Box } from '../core/box';
-import type { AtomJson, BoxType, ToLatexOptions } from '../core/types';
+import type {
+  AtomJson,
+  BoxType,
+  Branch,
+  PrivateStyle,
+  ToLatexOptions,
+} from '../core/types';
 import { getDefinition } from '../latex-commands/definitions-utils';
 
 export class GroupAtom extends Atom {
   private boxType?: BoxType;
 
-  constructor(arg: readonly Atom[], mode: ParseMode) {
-    super({ type: 'group', mode });
+  constructor(
+    arg: readonly Atom[],
+    mode: ParseMode,
+    commandArgument?: {
+      outerMode: ParseMode;
+      prefix: string;
+      style: PrivateStyle;
+    }
+  ) {
+    super({
+      type: 'group',
+      mode: commandArgument?.outerMode ?? mode,
+      commandArgumentPrefix: commandArgument?.prefix,
+      commandArgumentMode: commandArgument ? mode : undefined,
+      commandArgumentStyle: commandArgument?.style,
+    });
     this.body = arg;
 
     // Non-empty groups introduce a break in the
@@ -26,7 +46,28 @@ export class GroupAtom extends Atom {
   }
 
   static fromJson(json: AtomJson): GroupAtom {
-    return new GroupAtom(json.body, json.mode);
+    const result = new GroupAtom(
+      json.body,
+      json.commandArgumentMode ?? json.mode,
+      json.commandArgumentPrefix === undefined
+        ? undefined
+        : {
+            outerMode: json.mode,
+            prefix: json.commandArgumentPrefix,
+            style: json.commandArgumentStyle ?? {},
+          }
+    );
+    result.style = { ...json.style };
+    return result;
+  }
+
+  override makeFirstAtom(branch: Branch): Atom {
+    const result = super.makeFirstAtom(branch);
+    if (branch === 'body' && this.commandArgumentMode !== undefined) {
+      result.mode = this.commandArgumentMode;
+      result.style = { ...this.commandArgumentStyle };
+    }
+    return result;
   }
 
   render(context: Context): Box | null {
@@ -40,6 +81,23 @@ export class GroupAtom extends Atom {
   }
 
   _serialize(options: ToLatexOptions): string {
+    if (this.commandArgumentPrefix !== undefined) {
+      const savedMode = this.mode;
+      const savedStyle = this.style;
+      this.mode = this.commandArgumentMode ?? this.mode;
+      this.style = { ...this.commandArgumentStyle };
+      let body: string;
+      try {
+        body = this.bodyToLatex({ ...options, skipStyles: true });
+      } finally {
+        this.mode = savedMode;
+        this.style = savedStyle;
+      }
+      return `${this.commandArgumentPrefix}{${body}}${this.supsubToLatex(
+        options
+      )}`;
+    }
+
     if (
       !(
         options.expandMacro ||

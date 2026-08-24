@@ -292,6 +292,12 @@ export type AtomOptions<T extends (Argument | null)[] = (Argument | null)[]> =
   CreateAtomOptions<T> & {
     verbatimLatex?: string | null;
 
+    /** LaTeX before a command-owned editable argument body. */
+    commandArgumentPrefix?: string;
+    /** Mode inherited by newly created atoms in that argument. */
+    commandArgumentMode?: ParseMode;
+    commandArgumentStyle?: PrivateStyle;
+
     type?: AtomType;
     value?: string;
     body?: readonly Atom[];

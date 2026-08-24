@@ -1,5 +1,6 @@
 import { LatexAtom } from '../atoms/latex';
 import { suggest } from '../latex-commands/definitions-utils';
+import { getSuggestionInsertionLatex } from '../latex-commands/suggestion-preview';
 
 import type { _Model } from '../editor-model/model-private';
 
@@ -167,7 +168,7 @@ export function complete(
     style.variantStyle = undefined;
   }
 
-  ModeEditor.insert(mathfield.model, latex, {
+  ModeEditor.insert(mathfield.model, getSuggestionInsertionLatex(latex), {
     selectionMode: (options?.selectItem ?? false) ? 'item' : 'placeholder',
     format: 'latex',
     mode: 'math',
@@ -176,6 +177,16 @@ export function complete(
 
   mathfield.snapshot();
   mathfield.model.announce('replacement');
-  mathfield.switchMode('math');
+  const currentAtom = mathfield.model.at(mathfield.model.position);
+  const commandArgumentMode =
+    currentAtom?.parent?.type === 'group'
+      ? currentAtom.parent.commandArgumentMode
+      : undefined;
+
+  // Virtual empty arguments are collapsed selections, not PlaceholderAtoms.
+  // Preserve their owning command's mode so the first typed character inherits
+  // text/math styling exactly as it does after parsing an explicit group.
+  if (!commandArgumentMode && !mathfield.model.selectionIsPlaceholder)
+    mathfield.switchMode('math');
   return true;
 }

@@ -86,6 +86,12 @@ export class Atom<T extends (Argument | null)[] = (Argument | null)[]> {
 
   verbatimLatex: string | undefined;
 
+  // Distinguishes a semantic command argument from a structural `{}` and
+  // survives body edits so the owning command can be serialized exactly.
+  commandArgumentPrefix: string | undefined;
+  commandArgumentMode: ParseMode | undefined;
+  commandArgumentStyle: PrivateStyle | undefined;
+
   mode: ParseMode;
   style: PrivateStyle;
 
@@ -168,6 +174,12 @@ export class Atom<T extends (Argument | null)[] = (Argument | null)[]> {
     this.skipBoundary = options.skipBoundary ?? false;
     if (options.verbatimLatex !== undefined && options.verbatimLatex !== null)
       this.verbatimLatex = options.verbatimLatex;
+    if (options.commandArgumentPrefix !== undefined)
+      this.commandArgumentPrefix = options.commandArgumentPrefix;
+    if (options.commandArgumentMode !== undefined)
+      this.commandArgumentMode = options.commandArgumentMode;
+    if (options.commandArgumentStyle !== undefined)
+      this.commandArgumentStyle = { ...options.commandArgumentStyle };
     if (options.args) this.args = options.args;
     if (options.body) this.body = options.body;
     this._changeCounter = 0;
@@ -195,12 +207,7 @@ export class Atom<T extends (Argument | null)[] = (Argument | null)[]> {
     if (
       context.preserveEmptySlots &&
       atoms.length === 1 &&
-      atoms[0].type === 'first' &&
-      atoms[0].parent?.type !== 'root' &&
-      (atoms[0].parent?.type !== 'group' ||
-        atoms[0].parent.branches.some((branch) => branch !== 'body') ||
-        atoms[0].parent.rightSibling?.type === 'subsup' ||
-        atoms[0].parent.leftSibling?.isFunction)
+      isEmptySlotAtom(atoms[0])
     )
       return makeEmptySlotBox(context, atoms[0], options?.type);
 
@@ -288,6 +295,12 @@ export class Atom<T extends (Argument | null)[] = (Argument | null)[]> {
 
     if (this.verbatimLatex !== undefined)
       result.verbatimLatex = this.verbatimLatex;
+    if (this.commandArgumentPrefix !== undefined)
+      result.commandArgumentPrefix = this.commandArgumentPrefix;
+    if (this.commandArgumentMode !== undefined)
+      result.commandArgumentMode = this.commandArgumentMode;
+    if (this.commandArgumentStyle !== undefined)
+      result.commandArgumentStyle = { ...this.commandArgumentStyle };
 
     if (this.subsupPlacement) result.subsupPlacement = this.subsupPlacement;
     if (this.explicitSubsupPlacement) result.explicitSubsupPlacement = true;
@@ -1149,9 +1162,13 @@ function makeEmptySlotBox(
   atom: Atom,
   type: BoxType | undefined
 ): Box {
-  const slot = new Box(null, {
+  // Keep the caret inside the visible slot. Rendering it as a preceding
+  // sibling makes the caret indistinguishable from a position to the left of
+  // the slot and gives pointer/keyboard navigation misleading feedback.
+  const slot = new Box([new Box(null, { caret: atom.caret })], {
     type: type ?? 'ord',
-    classes: 'ML__empty-slot',
+    classes: `ML__empty-slot${atom.caret ? ' ML__empty-slot-active' : ''}`,
+    isSelected: atom.isSelected,
   });
   slot.width = 0.9;
   slot.height = 0.72;
@@ -1161,14 +1178,28 @@ function makeEmptySlotBox(
   slot.setStyle('height', '0.94em');
   slot.setStyle('vertical-align', '-0.22em');
 
-  // A regular Box appends its caret after its content. Keep this zero-width
-  // caret before the visible slot so an empty group behaves like a text field.
-  const result = new Box([new Box(null, { caret: atom.caret }), slot], {
-    type: type ?? 'ord',
-    isSelected: atom.isSelected,
-  });
-  atom.bind(context, result);
-  return result;
+  atom.bind(context, slot);
+  return slot;
+}
+
+/** Whether a branch sentinel represents a semantic, editable empty slot. */
+export function isEmptySlotAtom(atom: Atom): boolean {
+  const parent = atom.parent;
+  if (
+    atom.type !== 'first' ||
+    !atom.isLastSibling ||
+    !parent ||
+    parent.type === 'root'
+  )
+    return false;
+
+  return (
+    parent.type !== 'group' ||
+    parent.commandArgumentPrefix !== undefined ||
+    parent.branches.some((branch) => branch !== 'body') ||
+    parent.rightSibling?.type === 'subsup' ||
+    parent.leftSibling?.isFunction === true
+  );
 }
 
 function getStyleRuns(atoms: readonly Atom[]): (readonly Atom[])[] {

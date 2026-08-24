@@ -18,7 +18,6 @@ import { range } from '../editor-model/selection-utils';
 import { complete, removeSuggestion, updateAutocomplete } from './autocomplete';
 import { getLatexGroupBody } from './mode-editor-latex';
 import { getDefinition } from '../latex-commands/definitions-utils';
-import { requestUpdate } from './render';
 import type { _Mathfield } from './mathfield-private';
 import { removeIsolatedSpace, smartMode } from './smartmode';
 import { showKeystroke } from './keystroke-caption';
@@ -102,18 +101,17 @@ export function onKeystroke(
 
   let placeholderReplaced = false;
 
-  // If a placeholder is selected and we're about to type a printable character,
-  // delete the placeholder first, then process the keystroke normally
-  // (including any keybindings). This fixes issue #2572.
+  // Math placeholders are removed before shortcut processing so their first
+  // character can participate in a shortcut. Text placeholders must remain
+  // selected until text insertion, otherwise their mode and style are lost.
   if (
     mathfield.isSelectionEditable &&
+    model.mode === 'math' &&
     model.selectionIsPlaceholder &&
     mightProducePrintableCharacter(evt)
   ) {
     mathfield.flushInlineShortcutBuffer();
-    // Delete the selected placeholder
     model.deleteAtoms(range(model.selection));
-    // Snapshot this as a placeholder replacement operation
     mathfield.snapshot('delete');
     placeholderReplaced = true;
   }

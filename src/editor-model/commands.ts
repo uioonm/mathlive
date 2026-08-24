@@ -1,5 +1,5 @@
 import type { _Model } from './model-private';
-import { Atom, isCellBranch } from '../core/atom-class';
+import { Atom, isCellBranch, isEmptySlotAtom } from '../core/atom-class';
 import { ArrayAtom } from '../atoms/array';
 import { LatexAtom } from '../atoms/latex';
 import { TextAtom } from '../atoms/text';
@@ -378,6 +378,11 @@ function nextValidPosition(
 
 function isValidPosition(model: _Model, pos: number): boolean {
   const atom = model.at(pos);
+
+  // A rendered empty slot is an actual editing position. Treating every
+  // branch sentinel as invalid makes Left/Right skip over the input box.
+  if (model.mathfield.options.preserveEmptySlots && isEmptySlotAtom(atom))
+    return true;
 
   // If we're inside a captureSelection, that's not a valid position
   let parent = atom.parent;

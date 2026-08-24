@@ -742,6 +742,7 @@
 // Empty LaTeX groups are represented by their existing `first` atom. This is
 // intentionally a rendering affordance, not a serialized placeholder atom.
 .ML__empty-slot {
+  position: relative;
   box-sizing: border-box;
   min-width: 0.9em;
   border: 1px solid var(--_placeholder-color, #5ea6fd);
@@ -751,6 +752,39 @@
     var(--_placeholder-color, #5ea6fd) 12%,
     transparent
   );
+}
+
+// Keep the caret out of the slot's intrinsic layout. Fractions and arrays
+// center ordinary children, which otherwise puts this zero-width caret in the
+// middle of the input box and can enlarge the content's scrollable area.
+.ML__empty-slot > .ML__caret,
+.ML__empty-slot > .ML__text-caret {
+  position: absolute;
+  inset: 0;
+  display: block;
+  text-align: left;
+  pointer-events: none;
+}
+
+.ML__empty-slot > .ML__caret::after,
+.ML__empty-slot > .ML__text-caret::after {
+  position: absolute;
+  left: 0.12em;
+  top: 50%;
+  bottom: auto;
+  height: calc(100% - 0.22em);
+  margin-right: 0;
+  transform: translateY(-50%);
+}
+
+.ML__focused .ML__empty-slot-active {
+  border-color: var(--_caret-color);
+  box-shadow: inset 0 0 0 1px var(--_caret-color);
+  background: color-mix(in srgb, var(--_caret-color) 18%, transparent);
+}
+
+.ML__focused .ML__empty-slot.ML__selected {
+  box-shadow: inset 0 0 0 2px var(--_selection-background-color);
 }
 
 .ML__notation {

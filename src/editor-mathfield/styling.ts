@@ -195,15 +195,32 @@ export function defaultInsertStyleHook(
   const bias = mathfield.styleBias;
   if (bias === 'none') return mathfield.defaultStyle;
 
+  const currentAtom = model.at(offset);
+  const commandArgumentStyle =
+    currentAtom?.parent?.type === 'group' &&
+    currentAtom.parent.commandArgumentMode === model.mode
+      ? currentAtom.parent.commandArgumentStyle
+      : undefined;
+
   // In text mode, we inherit the style of the sibling atom
   if (model.mode === 'text') {
+    const sibling = model.at(bias === 'right' ? info.after : info.before);
     return (
-      model.at(bias === 'right' ? info.after : info.before)?.style ??
+      sibling?.style ??
+      // Command-owned groups keep their explicit style even before they have
+      // a text sibling from which the normal insertion hook can inherit.
+      commandArgumentStyle ??
       mathfield.defaultStyle
     );
   }
 
   if (model.mode === 'math') {
+    // Do not normalize an explicit command argument such as `\mathbb{}` to
+    // the ordinary math variant. The group owns this style for every atom
+    // typed inside it, including the first atom represented by its sentinel.
+    if (commandArgumentStyle)
+      return { ...mathfield.defaultStyle, ...commandArgumentStyle };
+
     const atom = model.at(bias === 'right' ? info.after : info.before);
     if (!atom) return { variant: 'normal', ...mathfield.defaultStyle };
     // Merge inherited style with defaultStyle, where defaultStyle takes precedence

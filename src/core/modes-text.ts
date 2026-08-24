@@ -133,6 +133,11 @@ export class TextMode extends Mode {
   }
 
   serialize(run: Atom[], options: ToLatexOptions): string[] {
+    // The owning command argument already serializes its text style. Emitting
+    // atom styles again would turn `\textbf{x}` into
+    // `\textbf{\textbf{x}}` after editing the empty argument.
+    if (options.skipStyles) return emitStringTextRun(run, options);
+
     return emitFontFamilyTextRun(
       run,
       {

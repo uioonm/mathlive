@@ -113,6 +113,12 @@ export function fromJson(json: AtomJson | AtomJson[]): Atom | Atom[] {
 
   if (json.verbatimLatex !== undefined)
     result.verbatimLatex = json.verbatimLatex;
+  if (json.commandArgumentPrefix !== undefined)
+    result.commandArgumentPrefix = json.commandArgumentPrefix;
+  if (json.commandArgumentMode !== undefined)
+    result.commandArgumentMode = json.commandArgumentMode;
+  if (json.commandArgumentStyle !== undefined)
+    result.commandArgumentStyle = { ...json.commandArgumentStyle };
 
   if (json.subsupPlacement) result.subsupPlacement = json.subsupPlacement;
   if (json.explicitSubsupPlacement) result.explicitSubsupPlacement = true;

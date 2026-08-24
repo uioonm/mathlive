@@ -399,16 +399,20 @@ export class MathModeEditor extends ModeEditor {
       if (placeholder) {
         const placeholderOffset = model.offsetOf(placeholder);
         model.setSelection(placeholderOffset - 1, placeholderOffset);
+        // Input must use the placeholder's mode. This matters for placeholders
+        // nested in `\text{}`: treating their replacement as math would discard
+        // the surrounding text style and flatten the inserted character.
+        model.mode = placeholder.mode;
         model.announce('move'); // Should have placeholder selected
       } else if (lastNewAtom) {
         const body = lastNewAtom.body;
         const hadEmptyBody = lastNewAtom.hasEmptyBranch('body');
         if (body && hadEmptyBody) {
-          // Some commands have a body which behaves like a placeholder (such as square root)
-          model.setSelection(
-            model.offsetOf(body[0]),
-            model.offsetOf(body[body.length - 1]) + 1
-          );
+          // Enter an owned empty argument instead of selecting its whole box.
+          // Typing then adds content to the command body rather than replacing
+          // the formatting command itself.
+          model.position = model.offsetOf(body[0]);
+          model.mode = body[0].mode;
         } else {
           // No placeholder found, move to right after what we just inserted
           model.position = model.offsetOf(lastNewAtom);

@@ -1266,9 +1266,9 @@ export class Parser {
 
   scanArguments(
     info: Partial<LatexCommandDefinition>
-  ): [ParseMode | undefined, (null | Argument)[]] {
+  ): [ArgumentType | undefined, (null | Argument)[]] {
     if (!info?.params) return [undefined, []];
-    let deferredArg: ParseMode | undefined = undefined;
+    let deferredArg: ArgumentType | undefined = undefined;
     const args: (null | Argument)[] = [];
     let i = info.infix ? 2 : 0;
     while (i < info.params.length) {
@@ -1293,7 +1293,7 @@ export class Parser {
       else if (parameter.type.endsWith('*')) {
         // Indicate that a 'yet-to-be-parsed' argument is present
         // which should be accounted for *after* the command has been processed.
-        deferredArg = parameter.type.slice(0, -1) as ParseMode;
+        deferredArg = parameter.type.slice(0, -1) as ArgumentType;
       } else args.push(this.scanArgument(parameter.type));
 
       i += 1;
@@ -1514,9 +1514,7 @@ export class Parser {
     // argument such as the root index in `\\sqrt[]{}`.
     if (argType === 'math') {
       this.beginContext({ mode: 'math' });
-      const result = this.mathlist.concat(
-        this.scan((token) => token === ']')
-      );
+      const result = this.mathlist.concat(this.scan((token) => token === ']'));
       this.endContext();
       this.match(']');
       return result;
@@ -1703,14 +1701,21 @@ export class Parser {
       const savedMode = this.parseMode;
       if (info.applyMode) this.parseMode = info.applyMode;
 
-      let deferredArg: ParseMode | undefined = undefined;
+      let deferredArg: ArgumentType | undefined = undefined;
       let args: (null | Argument)[] = [];
       if (info.parse) args = info.parse(this);
       else [deferredArg, args] = this.scanArguments(info);
 
       this.parseMode = savedMode;
-      if (info.applyMode && !info.applyStyle && !info.createAtom)
-        return argAtoms(args[0]);
+      if (info.applyMode && !info.applyStyle && !info.createAtom) {
+        return this.commandArgument(
+          command,
+          argAtoms(args[0]),
+          info.applyMode,
+          savedMode,
+          this.style
+        );
+      }
 
       if (info.infix) {
         // Infix commands should be handled in scanImplicitGroup
@@ -1748,10 +1753,21 @@ export class Parser {
           // Create a temporary style
           const saveStyle = this.style;
           this.style = style;
-          const atoms = this.scanArgument(deferredArg);
+          const commandArgumentPrefix = joinLatex([
+            command,
+            tokensToString(this.tokens.slice(initialIndex, this.index)),
+          ]);
+          const atoms = argAtoms(this.scanArgument(deferredArg));
+          const argumentMode = atoms[0]?.mode ?? this.parseMode;
           this.style = saveStyle;
           this.parseMode = savedMode;
-          return argAtoms(atoms);
+          return this.commandArgument(
+            commandArgumentPrefix,
+            atoms,
+            argumentMode,
+            savedMode,
+            style
+          );
         }
 
         // Merge the new style info with the current style
@@ -1793,6 +1809,24 @@ export class Parser {
     }
 
     return [result];
+  }
+
+  /** Preserve a command-owned argument as an editable group. */
+  private commandArgument(
+    prefix: string,
+    atoms: readonly Atom[],
+    argumentMode: ParseMode,
+    outerMode: ParseMode,
+    style: Style
+  ): readonly Atom[] {
+    if (!this.context.preserveEmptySlots) return atoms;
+
+    const group = new GroupAtom(atoms, argumentMode, {
+      outerMode,
+      prefix,
+      style,
+    });
+    return [group];
   }
 
   scanSymbolCommandOrLiteral(): readonly Atom[] | null {

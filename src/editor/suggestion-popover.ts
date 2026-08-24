@@ -21,6 +21,10 @@ import {
   getSharedElement,
   releaseSharedElement,
 } from '../common/shared-element';
+import {
+  getSuggestionInsertionLatex,
+  getSuggestionPreviewLatex,
+} from '../latex-commands/suggestion-preview';
 
 function escapeHtmlAttr(s: string): string {
   return s
@@ -31,7 +35,11 @@ function escapeHtmlAttr(s: string): string {
 }
 
 function latexToMarkup(mf: _Mathfield, latex: string): string {
-  const context = new Context({ from: mf.context });
+  // A suggestion is read-only. Do not show editor-only empty input slots in
+  // its preview when the source mathfield preserves empty slots.
+  const context = new Context({
+    from: { ...mf.context, preserveEmptySlots: false },
+  });
 
   const root = new Atom({
     mode: 'math',
@@ -61,7 +69,8 @@ export function showSuggestionPopover(
   let template = '';
   for (const [i, suggestion] of suggestions.entries()) {
     const command = suggestion;
-    const commandMarkup = latexToMarkup(mf, suggestion);
+    const previewLatex = getSuggestionPreviewLatex(suggestion);
+    const commandMarkup = previewLatex ? latexToMarkup(mf, previewLatex) : '';
     const keybinding = getKeybindingsForCommand(mf.keybindings, command).join(
       '<br>'
     );
@@ -196,11 +205,15 @@ export function createSuggestionPopover(
     while (el && !el.dataset.command) el = el.parentElement;
     if (!el) return;
     complete(mf, 'reject');
-    ModeEditor.insert(mf.model, el.dataset.command!, {
-      selectionMode: 'placeholder',
-      format: 'latex',
-      mode: 'math',
-    });
+    ModeEditor.insert(
+      mf.model,
+      getSuggestionInsertionLatex(el.dataset.command!),
+      {
+        selectionMode: 'placeholder',
+        format: 'latex',
+        mode: 'math',
+      }
+    );
     mf.dirty = true;
     mf.focus();
   });
