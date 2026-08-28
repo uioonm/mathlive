@@ -218,6 +218,46 @@ test('accepting textbf directly keeps its argument style while typing', async ({
   expect(boldText.join('')).toBe('aaaa');
 });
 
+test('a style command argument highlights only while the caret is inside', async ({
+  page,
+}) => {
+  await page.goto('/dist/playwright-test-page/');
+
+  const field = page.locator('#mf-1');
+  await field.evaluate((mathfield: MathfieldElement) => {
+    mathfield.preserveEmptySlots = true;
+    mathfield.insert('\\mathrm{}', {
+      focus: true,
+      selectionMode: 'placeholder',
+    });
+  });
+  await field.pressSequentially('SUM');
+
+  await expect(field.locator('.ML__contains-highlight')).toHaveCount(1);
+  await field.press('ArrowRight');
+  await expect(field.locator('.ML__contains-highlight')).toHaveCount(0);
+});
+
+test('a style command argument exposes its final character to keyboard navigation', async ({
+  page,
+}) => {
+  await page.goto('/dist/playwright-test-page/');
+
+  const field = page.locator('#mf-1');
+  await field.evaluate((mathfield: MathfieldElement) => {
+    mathfield.preserveEmptySlots = true;
+    mathfield.value = '\\mathrm{SUM}+x';
+    mathfield.focus();
+  });
+  await field.press('End');
+  await field.press('ArrowLeft');
+  await field.press('ArrowLeft');
+  await field.press('ArrowLeft');
+  await field.press('Backspace');
+
+  await expect(field).toHaveJSProperty('value', '\\mathrm{SU}+x');
+});
+
 test('an active empty fraction slot does not create vertical overflow', async ({
   page,
 }) => {

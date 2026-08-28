@@ -196,10 +196,15 @@ export function defaultInsertStyleHook(
   if (bias === 'none') return mathfield.defaultStyle;
 
   const currentAtom = model.at(offset);
+  // A caret can be nested in a structural atom such as `LeftRightAtom` while
+  // still belonging to an outer styled command argument.
+  let commandArgument = currentAtom?.parent;
+  while (commandArgument && commandArgument.commandArgumentPrefix === undefined)
+    commandArgument = commandArgument.parent;
   const commandArgumentStyle =
-    currentAtom?.parent?.type === 'group' &&
-    currentAtom.parent.commandArgumentMode === model.mode
-      ? currentAtom.parent.commandArgumentStyle
+    commandArgument?.type === 'group' &&
+    commandArgument.commandArgumentMode === model.mode
+      ? commandArgument.commandArgumentStyle
       : undefined;
 
   // In text mode, we inherit the style of the sibling atom

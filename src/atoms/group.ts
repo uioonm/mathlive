@@ -30,6 +30,10 @@ export class GroupAtom extends Atom {
       commandArgumentPrefix: commandArgument?.prefix,
       commandArgumentMode: commandArgument ? mode : undefined,
       commandArgumentStyle: commandArgument?.style,
+      // Command-owned groups such as `\mathrm{...}` are editable scopes.
+      // Reuse the standard caret-scope highlight used by fences and fractions,
+      // while keeping ordinary structural `{...}` groups visually neutral.
+      displayContainsHighlight: commandArgument !== undefined,
     });
     this.body = arg;
 
@@ -37,8 +41,10 @@ export class GroupAtom extends Atom {
     // inter-box spacing. Empty groups (`{}`) do not.
     this.boxType = arg.length > 1 ? 'ord' : 'ignore';
 
-    this.skipBoundary = true;
-    this.displayContainsHighlight = false;
+    // Structural groups hide their visually duplicated inner boundaries.
+    // A command argument is an explicit editing scope, so its first and last
+    // caret positions must remain reachable with the arrow keys.
+    this.skipBoundary = commandArgument === undefined;
 
     // French decimal point, i.e. `{,}`
     if (arg?.length === 1 && arg[0].command === ',')

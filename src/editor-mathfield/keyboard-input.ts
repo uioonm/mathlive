@@ -1201,18 +1201,31 @@ function insertSmartFence(model: _Model, key: string, style?: Style): boolean {
         if (hasDecimalPoint) return false;
       }
 
-      // We have a valid open fence as input
+      // Capture the complete pre-insertion model before extracting trailing
+      // atoms; otherwise undo would restore the already-truncated expression.
       model.mathfield.snapshot();
+
+      // Extract trailing content before insertion changes the linear offsets.
+      let content: Atom[] = [];
+      if (!atom.isLastSibling) {
+        content = model
+          .extractAtoms([model.position, model.offsetOf(atom.lastSibling)])
+          .filter((value) => value.type !== 'first');
+      }
+
+      // We have a valid open fence as input
       ModeEditor.insert(model, `\\left${fence}\\right?`, {
         format: 'latex',
         style,
       });
       // If there is content after the anchor, move it into the `leftright` atom
-      if (atom.lastSibling.type !== 'first') {
-        const lastSiblingOffset = model.offsetOf(atom.lastSibling);
-        const content = model.extractAtoms([model.position, lastSiblingOffset]);
-        model.at(model.position).body = content;
-        model.position -= 1;
+      if (content.length > 0) {
+        const insertedFence = model.at(model.position).parent;
+        if (insertedFence instanceof LeftRightAtom) {
+          insertedFence.body = content;
+          insertedFence.isDirty = true;
+          model.position = model.offsetOf(insertedFence.firstChild);
+        }
       }
       model.mathfield.snapshot('insert-fence');
       return true;

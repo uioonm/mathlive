@@ -180,7 +180,8 @@
   position: relative;
   overflow-x: auto;
   scrollbar-width: thin;
-  padding: 2px 3px 2px 1px;
+  // Keep fractional glyph metrics and empty-slot borders inside the scroll box.
+  padding: 3px 3px 3px 1px;
   width: 100%;
 
   /* Encourage the browser to use the GPU to render the field.

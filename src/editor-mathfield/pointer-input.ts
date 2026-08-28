@@ -437,9 +437,10 @@ function nearestAtomFromPointRecursive(
       }
     }
 
-    // Search children for additional atoms (like delimiters)
-    // For multiline arrays, skip this to avoid selecting atoms from wrong rows
-    if (!atom.isMultiline) {
+    // `isMultiline` controls Enter-key editing, not the rendered row count.
+    // Re-searching children of any visual multi-row array overwrites the row
+    // chosen above with atoms from another row as the pointer moves.
+    if (atom.rows.length <= 1) {
       for (const child of atom.children) {
         const r = nearestAtomFromPointRecursive(mathfield, cache, child, x, y);
         if (r[0] <= result[0]) result = r;

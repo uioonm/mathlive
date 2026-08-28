@@ -2,6 +2,64 @@ import type { MathfieldElement } from '../../src/public/mathfield-element';
 
 import { test, expect } from '@playwright/test';
 
+test('open fence at the end keeps the new fence editable', async ({ page }) => {
+  await page.goto('/dist/playwright-test-page/');
+
+  const field = page.locator('#mf-1');
+  await field.evaluate((mathfield: MathfieldElement) => {
+    mathfield.value = '\\mathrm{SUM}';
+    mathfield.position = -1;
+  });
+  await field.pressSequentially('(abc');
+
+  await expect(field).toHaveJSProperty(
+    'value',
+    String.raw`\mathrm{SUM}\left(abc\right)`
+  );
+});
+
+test('undoing an open fence restores trailing content', async ({ page }) => {
+  await page.goto('/dist/playwright-test-page/');
+
+  const field = page.locator('#mf-1');
+  await field.evaluate((mathfield: MathfieldElement) => {
+    mathfield.value = 'x+y';
+    mathfield.position = 1;
+  });
+  await field.press('(');
+  await expect(field).toHaveJSProperty('value', 'x\\left(+y\\right)');
+
+  await field.press('Control+z');
+  await expect(field).toHaveJSProperty('value', 'x+y');
+
+  await field.press('Control+Shift+z');
+  await expect(field).toHaveJSProperty('value', 'x\\left(+y\\right)');
+});
+
+test('an open fence preserves its command argument style', async ({ page }) => {
+  await page.goto('/dist/playwright-test-page/');
+
+  const field = page.locator('#mf-1');
+  await field.evaluate((mathfield: MathfieldElement) => {
+    mathfield.preserveEmptySlots = true;
+    mathfield.value = '\\mathbb{A}';
+    mathfield.position = 2;
+  });
+  await field.pressSequentially('(B');
+
+  await expect(field).toHaveJSProperty('value', '\\mathbb{A\\left(B\\right)}');
+  const doubleStruckText = await field.locator('.ML__bb').allTextContents();
+  expect(doubleStruckText.join('')).toBe('AB');
+
+  await field.evaluate((mathfield: MathfieldElement) => {
+    mathfield.position = -1;
+  });
+  await field.press('C');
+  await expect(field).toHaveJSProperty('value', '\\mathbb{A\\left(B\\right)}C');
+  const normalText = await field.locator('.ML__mathit').allTextContents();
+  expect(normalText.join('')).toBe('C');
+});
+
 // #1691
 test('right parenthesis first', async ({ page }) => {
   await page.goto('/dist/playwright-test-page/');
