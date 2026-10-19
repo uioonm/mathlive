@@ -180,8 +180,9 @@
   position: relative;
   overflow-x: auto;
   scrollbar-width: thin;
-  // Keep fractional glyph metrics and empty-slot borders inside the scroll box.
-  padding: 3px 3px 3px 1px;
+  // Size-font line boxes can extend beyond the TeX struts. Reserve scalable
+  // space for them so horizontal scrolling does not cause vertical overflow.
+  padding: 0.5em 3px 0.5em 1px;
   width: 100%;
 
   /* Encourage the browser to use the GPU to render the field.

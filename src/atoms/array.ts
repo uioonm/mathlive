@@ -489,7 +489,9 @@ export class ArrayAtom extends Atom {
               new Box(null, { type: 'ignore' }));
         depth = Math.max(depth, elt.depth);
         height = Math.max(height, elt.height);
-        outrow.cells.push(elt);
+        // Row metrics belong to a cell wrapper: a single empty slot may be
+        // returned directly, and stretching it would stretch its visible box.
+        outrow.cells.push(new Box(elt, { type: 'ignore' }));
       }
 
       let gap: number = convertDimensionToEm(this.rowGaps[r]) ?? 0;
